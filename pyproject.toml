@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "sample-todo-list-hexagonal-achitecture"
+version = "0.1.0"
+description = "Sample of TO-DO List Application using Hexagonal Architecture."
+license = "Apache-2.0"
+repository = 'https://github.com/othercodes/sample-todo-list-hexagonal-achitecture'
+authors = [
+    "Unay Santisteban <davidunay.santisteban@cloudblue.com>"
+]
+packages = [
+    { include = "to_do_list" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pinject = "^0.14.1"
+complexheart-criteria = { git = "git@github.com:ComplexHeart/py-criteria.git", branch = "main" }
+
+[tool.poetry.dev-dependencies]
+coverage = "^6.4"
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+Faker = "^9.8.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = "--cov=to_do_list --cov-report=term-missing:skip-covered --cov-report=html --cov-report=xml"
+
+[tool.coverage.run]
+omit = ["tests/*", "venv*/*", "setup.py"]
+relative_files = true
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __str__",
+    "def __repr__",
+    "import",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
