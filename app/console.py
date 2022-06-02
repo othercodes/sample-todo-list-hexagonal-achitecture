@@ -1,6 +1,7 @@
 import os
 
 import click as click
+from complexheart.domain.criteria import Criteria
 
 from dotenv import load_dotenv
 
@@ -24,14 +25,14 @@ def cli(ctx: click.core.Context):
     }))
 
 
-@cli.command(name='init')
+@cli.command(name='init', help='Initialize the task database.')
 @click.pass_obj
 def cmd_init(container: Container):
     use_case = container.get(DBInstaller)  # type: DBInstaller
     use_case.install()
 
 
-@cli.command(name='add')
+@cli.command(name='add', help='Add a new task.')
 @click.argument('description')
 @click.argument('due_date')
 @click.pass_obj
@@ -45,7 +46,7 @@ def cmd_add(container: Container, description: str, due_date: str):
     click.echo(f'New task added: {task}')
 
 
-@cli.command(name='list')
+@cli.command(name='list', help='List all tasks.')
 @click.pass_obj
 def cmd_list(container: Container):
     use_case = container.get(TaskFinder)  # type: TaskFinder
@@ -54,7 +55,25 @@ def cmd_list(container: Container):
         click.echo(f'{task}')
 
 
-@cli.command(name='delete')
+@cli.command(name='find', help='Find tasks by criteria.')
+@click.argument('description')
+@click.option('-l', '--limit', 'limit', default=10, help='Limit the number of results')
+@click.option('-o', '--offset', 'offset', default=0, help='Offset the number of results')
+@click.pass_obj
+def cmd_list(container: Container, description: str, limit: int, offset: int):
+    use_case = container.get(TaskFinder)  # type: TaskFinder
+
+    criteria = Criteria() \
+        .filter('description', 'like', f'%{description}%') \
+        .limit(limit) \
+        .offset(offset) \
+        .order_by(['id'])
+
+    for task in use_case.by_criteria(criteria):
+        click.echo(f'{task}')
+
+
+@cli.command(name='delete', help='Delete a task.')
 @click.argument('task_id', type=int)
 @click.pass_obj
 def cmd_delete(container: Container, task_id: int):

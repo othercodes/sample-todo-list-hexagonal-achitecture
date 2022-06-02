@@ -16,6 +16,7 @@ python = "^3.8"
 pinject = "^0.14.1"
 SQLAlchemy = "^1.4.31"
 complexheart-criteria = { git = "git@github.com:ComplexHeart/py-criteria.git", branch = "main" }
+python-dotenv = "^0.20.0"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.4"
