@@ -7,6 +7,7 @@ from pinject.errors import NothingInjectableForArgError
 from app.configuration import logger, main
 from app.providers import ServiceProvider
 
+
 class Container:
     """ Container for dependency injection. """
 

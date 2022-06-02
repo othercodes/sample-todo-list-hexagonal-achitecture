@@ -1,14 +1,15 @@
-from typing import Optional
+import operator
+from typing import Optional, Any, Type
 
-from complexheart.domain.criteria import Criteria
-from sqlalchemy import Table, MetaData, Column, orm, String, Integer, DateTime
+from complexheart.domain.criteria import Criteria, OrderType, Filter
+from sqlalchemy import asc, desc, Table, Column, orm, String, Integer, DateTime
 
 from to_do_list.shared.domain.models import Collection
 from to_do_list.tasks.domain.contracts import TaskRepository
 from to_do_list.tasks.domain.models import Task
 
 mapper = orm.registry()
-metadata = MetaData()
+metadata = mapper.metadata
 
 tasks = Table(
     'tasks',
@@ -35,6 +36,22 @@ class DBInstaller:
         metadata.create_all(self.engine)
 
 
+def _compile_filter(ftr: Filter, cls: Type) -> Any:
+    fn = {
+        '==': lambda field, value: operator.eq(getattr(cls, field), value),
+        '!=': lambda field, value: operator.ne(getattr(cls, field), value),
+        '>': lambda field, value: operator.gt(getattr(cls, field), value),
+        '>=': lambda field, value: operator.ge(getattr(cls, field), value),
+        '<': lambda field, value: operator.lt(getattr(cls, field), value),
+        '<=': lambda field, value: operator.le(getattr(cls, field), value),
+        'in': lambda field, value: operator.contains(getattr(cls, field), value),
+        'not in': lambda field, value: not operator.contains(getattr(cls, field), value),
+        'like': lambda field, value: getattr(cls, field).like(value)
+    }.get(ftr.operator)
+
+    return fn(ftr.field, ftr.value)
+
+
 class RelationalTaskRepository(TaskRepository):
     def __init__(self, db_session: orm.Session):
         start_mappers()
@@ -53,12 +70,19 @@ class RelationalTaskRepository(TaskRepository):
         return self.session.query(Task).get(id)
 
     def match(self, criteria: Criteria) -> Collection[Task]:
-        query = self.session.query(Task) \
-            .order_by(criteria.order.by) \
-            .limit(criteria.page.limit) \
-            .offset(criteria.page.offset)
+        query = self.session.query(Task)
 
-        # TODO: implement the filters
+        for f in criteria.filters:
+            query = query.filter(_compile_filter(f, Task))
+
+        ordering_fields = [getattr(Task, field) for field in criteria.order.by]
+        ordering_type = desc(*ordering_fields) \
+            if criteria.order.type is OrderType.DESC \
+            else asc(*ordering_fields)
+
+        query = query.order_by(ordering_type)
+        query = query.limit(criteria.page.limit)
+        query = query.offset(criteria.page.offset)
 
         def deferred():
             for task in query:
